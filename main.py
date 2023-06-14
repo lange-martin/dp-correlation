@@ -34,18 +34,28 @@ def prob_for_output_given_x0(o, x0, data_prob, n=2):
 
     prob_sum = prob_sum / prob_sum_value_x0
 
-    #for x1 in [0, 1]:
-    #    prob_sum += data_prob[(x0, x1)] / (data_prob[(x0, 0)] + data_prob[(x0, 1)]) * f(o - x0 - x1)
-
     return prob_sum
 
 
-def associative_privacy_budget(o, data_prob, n=2):
+def associative_privacy_loss(o, data_prob, n=2):
     prob_o_00 = prob_for_output_given_x0(o, 0, data_prob, n)
 
     prob_o_01 = prob_for_output_given_x0(o, 1, data_prob, n)
 
     return np.maximum(np.log(prob_o_00/prob_o_01), np.log(prob_o_01/prob_o_00))
+
+
+def privacy_loss(o, n=2):
+    # calculate maximum privacy loss over all possibilities of the remaining dataset (x1)
+    privacy_loss = 0.0
+
+    for x1 in [0, 1]:
+        prob_o_0 = f(o - 0 - x1)
+        prob_o_1 = f(o - 1 - x1)
+        privacy_loss_t = np.maximum(np.log(prob_o_0/prob_o_1), np.log(prob_o_1/prob_o_0))
+        privacy_loss = max(privacy_loss, privacy_loss_t)
+
+    return privacy_loss
 
 
 def get_correlated_data(pearson_correlation_coefficient):
@@ -122,10 +132,10 @@ def get_mixed_dataset(pearson, n_correlated, n_independent):
 
 if __name__ == '__main__':
     # correlated case (many variate)
-    Nc = 3
+    Nc = 2
     Ni = 0
     N = Nc + Ni
-    Pearson = 0.9
+    Pearson = 1.0
 
     data_prob = get_mixed_dataset(Pearson, Nc, Ni)
     print(data_prob)
@@ -133,12 +143,13 @@ if __name__ == '__main__':
     os = np.linspace(-1, N + 1, 100)
     probs_given_x0_0 = [prob_for_output_given_x0(o, 0, data_prob, N) for o in os]
     probs_given_x0_1 = [prob_for_output_given_x0(o, 1, data_prob, N) for o in os]
-    apgs = [associative_privacy_budget(o, data_prob, N) for o in os]
+    apgs = [associative_privacy_loss(o, data_prob, N) for o in os]
 
-    plt.plot(os, probs_given_x0_0, label='Pr[O = x | x0 = 0]')
-    plt.plot(os, probs_given_x0_1, label='Pr[O = x | x0 = 1]')
-    plt.plot(os, apgs, label='associative epsilon')
+    plt.plot(os, probs_given_x0_0, label='p[O = x | D_1 = 0]')
+    plt.plot(os, probs_given_x0_1, label='p[O = x | D_1 = 1]')
+    plt.plot(os, apgs, label='associative privacy loss')
     plt.plot(os, 100*[EPS], label='DP epsilon')
+    #plt.plot(os, [privacy_loss(o) for o in os], label='privacy loss')
 
     plt.title(f"Pearson: {Pearson}, Correlated Records: {Nc}, Independent Records: {Ni}")
     plt.legend()
@@ -147,15 +158,15 @@ if __name__ == '__main__':
 
     ps = np.linspace(-1, 1, 100)
     Nc = 2
-    apgs_pearson_2 = [associative_privacy_budget(-50, get_mixed_dataset(p, Nc, Ni), Nc+Ni) for p in ps]
+    apgs_pearson_2 = [associative_privacy_loss(-50, get_mixed_dataset(p, Nc, Ni), Nc + Ni) for p in ps]
     Nc = 4
-    apgs_pearson_4 = [associative_privacy_budget(-50, get_mixed_dataset(p, Nc, Ni), Nc+Ni) for p in ps]
+    apgs_pearson_4 = [associative_privacy_loss(-50, get_mixed_dataset(p, Nc, Ni), Nc + Ni) for p in ps]
     Nc = 8
-    apgs_pearson_8 = [associative_privacy_budget(-50, get_mixed_dataset(p, Nc, Ni), Nc+Ni) for p in ps]
+    apgs_pearson_8 = [associative_privacy_loss(-50, get_mixed_dataset(p, Nc, Ni), Nc + Ni) for p in ps]
     #plt.plot(ps, 100*[EPS], label='DP epsilon')
-    plt.plot(ps, apgs_pearson_2, label='associative privacy loss / correlated (correlated = 2)')
-    plt.plot(ps, apgs_pearson_4, label='associative privacy loss / correlated (correlated = 4)')
-    plt.plot(ps, apgs_pearson_8, label='associative privacy loss / correlated (correlated = 8)')
+    plt.plot(ps, apgs_pearson_2, label='associative privacy loss (2 correlated records)')
+    plt.plot(ps, apgs_pearson_4, label='associative privacy loss (4 correlated records)')
+    plt.plot(ps, apgs_pearson_8, label='associative privacy loss (8 correlated records)')
 
     plt.legend()
     plt.show()
@@ -163,7 +174,7 @@ if __name__ == '__main__':
     heatmap = np.zeros((100, 9))
     for i, pearson in enumerate(np.linspace(-1, 1, 100)):
         for j, n_correlated in enumerate(range(2, 11)):
-            heatmap[i, j] = associative_privacy_budget(-50, get_mixed_dataset(pearson, n_correlated, 0), n_correlated)
+            heatmap[i, j] = associative_privacy_loss(-50, get_mixed_dataset(pearson, n_correlated, 0), n_correlated)
     plt.imshow(heatmap, cmap='hot', interpolation='nearest')
     plt.show()
 
@@ -171,11 +182,11 @@ if __name__ == '__main__':
 
 
     ps = np.linspace(-1, 1, 100)
-    apgs_pearson_1 = [associative_privacy_budget(-50, get_correlated_data(p)) / EPS for p in ps]
+    apgs_pearson_1 = [associative_privacy_loss(-50, get_correlated_data(p)) / EPS for p in ps]
     EPS = 3.0
-    apgs_pearson_3 = [associative_privacy_budget(-50, get_correlated_data(p)) / EPS for p in ps]
+    apgs_pearson_3 = [associative_privacy_loss(-50, get_correlated_data(p)) / EPS for p in ps]
     EPS = 10.0
-    apgs_pearson_10 = [associative_privacy_budget(-50, get_correlated_data(p)) / EPS for p in ps]
+    apgs_pearson_10 = [associative_privacy_loss(-50, get_correlated_data(p)) / EPS for p in ps]
     #plt.plot(ps, 100*[EPS], label='DP epsilon')
     plt.plot(ps, apgs_pearson_1, label='associative privacy loss / epsilon (epsilon = 1)')
     plt.plot(ps, apgs_pearson_3, label='associative privacy loss / epsilon (epsilon = 3)')
@@ -192,5 +203,5 @@ if __name__ == '__main__':
 
     #data_prob = get_uncorrelated_database(prob_x0, prob_x1)
 
-    #print(associative_privacy_budget(max_output, data_prob))
+    #print(associative_privacy_loss(max_output, data_prob))
 
