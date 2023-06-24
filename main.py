@@ -184,30 +184,4 @@ if __name__ == '__main__':
     plt.imshow(heatmap, cmap='hot', interpolation='nearest')
     plt.show()
 
-    exit()
-
-
-    ps = np.linspace(-1, 1, 100)
-    apgs_pearson_1 = [associative_privacy_loss(-50, get_correlated_data(p)) / EPS for p in ps]
-    EPS = 3.0
-    apgs_pearson_3 = [associative_privacy_loss(-50, get_correlated_data(p)) / EPS for p in ps]
-    EPS = 10.0
-    apgs_pearson_10 = [associative_privacy_loss(-50, get_correlated_data(p)) / EPS for p in ps]
-    #plt.plot(ps, 100*[EPS], label='DP epsilon')
-    plt.plot(ps, apgs_pearson_1, label='associative privacy loss / epsilon (epsilon = 1)')
-    plt.plot(ps, apgs_pearson_3, label='associative privacy loss / epsilon (epsilon = 3)')
-    plt.plot(ps, apgs_pearson_10, label='associative privacy loss / epsilon (epsilon = 10)')
-
-    plt.legend()
-    plt.show()
-
-
-    # uncorrelated case
-
-    #prob_x0 = {0: 0.1, 1: 0.9}
-    #prob_x1 = {0: 0.33, 1: 0.67}
-
-    #data_prob = get_uncorrelated_database(prob_x0, prob_x1)
-
-    #print(associative_privacy_loss(max_output, data_prob))
 
