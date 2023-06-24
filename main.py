@@ -30,7 +30,7 @@ def prob_for_output_given_x0(o, x0, data_prob, n=2):
             tuple_sum += x0a[i]
 
         prob_sum_value_x0 += data_prob[x0a]
-        prob_sum += data_prob[x0a] * f(o - tuple_sum)
+        prob_sum += data_prob[x0a] * F(o - tuple_sum)
 
     prob_sum = prob_sum / prob_sum_value_x0
 
@@ -131,6 +131,12 @@ def get_mixed_dataset(pearson, n_correlated, n_independent):
 
 
 if __name__ == '__main__':
+    apl_2 = associative_privacy_loss(-50, get_mixed_dataset(0.75, 2, 0), 2)
+    apl_8 = associative_privacy_loss(-50, get_mixed_dataset(0.75, 8, 0), 8)
+
+    print(apl_2)
+    print(apl_8)
+
     # correlated case (many variate)
     Nc = 2
     Ni = 0
@@ -145,8 +151,8 @@ if __name__ == '__main__':
     probs_given_x0_1 = [prob_for_output_given_x0(o, 1, data_prob, N) for o in os]
     apgs = [associative_privacy_loss(o, data_prob, N) for o in os]
 
-    plt.plot(os, probs_given_x0_0, label='p[O = x | D_1 = 0]')
-    plt.plot(os, probs_given_x0_1, label='p[O = x | D_1 = 1]')
+    plt.plot(os, probs_given_x0_0, label='Pr[O ≤ x | D_1 = 0]')
+    plt.plot(os, probs_given_x0_1, label='Pr[O ≤ x | D_1 = 1]')
     plt.plot(os, apgs, label='associative privacy loss')
     plt.plot(os, 100*[EPS], label='DP epsilon')
     #plt.plot(os, [privacy_loss(o) for o in os], label='privacy loss')
@@ -156,7 +162,7 @@ if __name__ == '__main__':
     plt.show()
 
 
-    ps = np.linspace(-1, 1, 100)
+    ps = np.linspace(0, 1, 100)
     Nc = 2
     apgs_pearson_2 = [associative_privacy_loss(-50, get_mixed_dataset(p, Nc, Ni), Nc + Ni) for p in ps]
     Nc = 4
